@@ -45,8 +45,34 @@ APM2.5 Mavlink to FrSky X8R SPort interface using Teensy 3.1  http://www.pjrc.co
  */
 
 #include <GCS_MAVLink.h>
+#include <Tone.h>
 #include "FrSkySPort.h"
 ////////////////////////////////
+Tone tone1;
+
+#define isdigit(n) (n >= '0' && n <= '9')
+
+#define OCTAVE_OFFSET 0
+
+int notes[] = { 0,
+
+NOTE_C4, NOTE_CS4, NOTE_D4, NOTE_DS4, NOTE_E4, NOTE_F4, NOTE_FS4, NOTE_G4, NOTE_GS4, NOTE_A4, NOTE_AS4, NOTE_B4,
+NOTE_C5, NOTE_CS5, NOTE_D5, NOTE_DS5, NOTE_E5, NOTE_F5, NOTE_FS5, NOTE_G5, NOTE_GS5, NOTE_A5, NOTE_AS5, NOTE_B5,
+NOTE_C6, NOTE_CS6, NOTE_D6, NOTE_DS6, NOTE_E6, NOTE_F6, NOTE_FS6, NOTE_G6, NOTE_GS6, NOTE_A6, NOTE_AS6, NOTE_B6,
+NOTE_C7, NOTE_CS7, NOTE_D7, NOTE_DS7, NOTE_E7, NOTE_F7, NOTE_FS7, NOTE_G7, NOTE_GS7, NOTE_A7, NOTE_AS7, NOTE_B7
+};
+
+//****************************************SONGS*****************************************************************
+
+
+char *song_armed = "MissionImp:d=16,o=6,b=95:32d,32d#,32d,32d#,32d,32d#,32d,32d#,32d,32d,32d#,32e,32f,32f#,32g,g,8p,g,8p,a#,p,c7,p,g,8p,g,8p,f,p,f#,p,g,8p,g,8p,a#,p,c7,p,g,8p,g,8p,f,p,f#,p,a#,g,2d,32p,a#,g,2c#,32p,a#,g,2c,a#5,8c,2p,32p,a#5,g5,2f#,32p,a#5,g5,2f,32p,a#5,g5,2e,d#,8d";
+char *song_disarmed =  "smbdeath:d=4,o=5,b=90:32c6,32c6,32c6,8p,16b,16f6,16p,16f6,16f.6,16e.6,16d6,16c6,16p,16e,16p,16c";
+
+char *song = "Gadget:d=16,o=5,b=50:32d#,32f,32f#,32g#,a#,f#,a,f,g#,f#,32d#,32f,32f#,32g#,a#,d#6,4d6,32d#,32f,32f#,32g#,a#,f#,a,f,g#,f#,8d#";
+
+//****************************************SONGS*****************************************************************
+uint8_t    song_played = 0;
+///////////////////////////////////////////////////////////////////////
 
 #define _MavLinkSerial      Serial1
 #define START                   1
@@ -117,11 +143,15 @@ void setup()  {
 
   FrSkySPort_Init();
   _MavLinkSerial.begin(57600);
+  //debugSerial.begin(57600);
   MavLink_Connected = 0;
   MavLink_Connected_timer=millis();
   hb_timer = millis();
   hb_count = 0;
 
+
+  tone1.begin(11);
+  play_rtttl(song_disarmed);
   pinMode(led,OUTPUT);
   pinMode(12,OUTPUT);
 
@@ -162,10 +192,21 @@ void loop()  {
   _MavLink_receive();                   // Check MavLink communication
 
   FrSkySPort_Process();               // Check FrSky S.Port communication
- 
+  
+  
+  if(song_played == 0 ){
+  if(ap_base_mode){  // If ARMED
+  play_rtttl(song_armed);
+   song_played = 1;
+    }
+  }
+  if(!ap_base_mode ){  // Not If ARMED
+  if(song_played == 1){
+  play_rtttl(song_disarmed);
+      song_played = 0;
+    }
+  }
   adc2 =analogRead(0)/4;               // Read ananog value from A0 (Pin 14). ( Will be A2 value on FrSky LCD)
-  
-  
 }
 
 
